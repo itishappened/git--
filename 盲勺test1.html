@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盲勺打包 · 小红书风小游戏</title>
+    <style>
+        :root {
+            --cream: #FFF5E6;
+            --pink: #FFB6C1;
+            --mint: #B5EAD7;
+            --lavender: #C9B1FF;
+            --peach: #FFDAB9;
+            --gold: #FFD700;
+            --text: #5A4A3A;
+            --text-light: #8B7B6B;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 6px 28px rgba(0, 0, 0, 0.14);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --color-red: #FF6B6B;
+            --color-blue: #4ECDC4;
+            --color-pink: #FFB6C1;
+            --color-purple: #C9B1FF;
+            --color-green: #B5EAD7;
+            --color-yellow: #FFE66D;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--cream); color: var(--text); min-height:100vh; overflow-x:hidden;
+            -webkit-tap-highlight-color: transparent; user-select:none; -webkit-user-select:none;
+        }
+        .screen { display:none; min-height:100vh; padding:16px; animation:fadeIn 0.4s ease; }
+        .screen.active { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+        @keyframes fadeIn { from {opacity:0; transform:translateY(16px);} to {opacity:1; transform:translateY(0);} }
+        @keyframes bounceIn { 0%{transform:scale(0.3);opacity:0} 50%{transform:scale(1.05)} 70%{transform:scale(0.95)} 100%{transform:scale(1);opacity:1} }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes wiggle { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+        @keyframes sparkle { 0%,100%{opacity:0.5;transform:scale(0.8)} 50%{opacity:1;transform:scale(1.2)} }
+        @keyframes popIn { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+        @keyframes confetti { 0%{transform:translateY(0) rotate(0deg);opacity:1} 100%{transform:translateY(-120px) rotate(360deg);opacity:0} }
+        .card { background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin:8px; transition:var(--transition); width:100%; max-width:600px; border:2px solid #fff; }
+        .card:hover { box-shadow:var(--shadow-hover); }
+        .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px 24px; border-radius:50px; border:none; cursor:pointer; font-size:16px; font-weight:600; transition:var(--transition); letter-spacing:0.5px; position:relative; overflow:hidden; font-family:inherit; }
+        .btn:active { transform:scale(0.94); }
+        .btn-pink { background:var(--pink); color:#fff; box-shadow:0 4px 16px rgba(255,182,193,0.45); }
+        .btn-pink:hover { box-shadow:0 6px 24px rgba(255,182,193,0.6); transform:translateY(-2px); }
+        .btn-mint { background:var(--mint); color:#4a6b5a; box-shadow:0 4px 16px rgba(181,234,215,0.45); }
+        .btn-mint:hover { box-shadow:0 6px 24px rgba(181,234,215,0.6); transform:translateY(-2px); }
+        .btn-lavender { background:var(--lavender); color:#fff; box-shadow:0 4px 16px rgba(201,177,255,0.45); }
+        .btn-outline { background:transparent; border:2px solid var(--pink); color:var(--pink); }
+        .btn-outline:hover { background:var(--pink); color:#fff; }
+        .btn:disabled { opacity:0.5; cursor:not-allowed; transform:none !important; }
+        .btn-sm { padding:8px 16px; font-size:13px; border-radius:30px; }
+        .title { font-size:36px; font-weight:800; background:linear-gradient(135deg,#FFB6C1,#C9B1FF,#B5EAD7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; text-align:center; }
+        .subtitle { font-size:16px; color:var(--text-light); text-align:center; margin-bottom:16px; line-height:1.6; }
+        .top-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; width:100%; max-width:600px; padding:10px 16px; background:#fff; border-radius:50px; box-shadow:var(--shadow); margin-bottom:12px; position:sticky; top:8px; z-index:50; }
+        .stat-chip { display:flex; align-items:center; gap:5px; font-size:14px; font-weight:600; padding:6px 12px; border-radius:30px; background:#FFF8F0; }
+        .customer-box { display:flex; align-items:center; gap:14px; background:#fff; border-radius:var(--radius); padding:16px 20px; box-shadow:var(--shadow); width:100%; max-width:600px; margin-bottom:10px; animation:slideUp 0.5s ease; }
+        @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
+        .customer-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#FFE5EC,#E8DFFF); display:flex; align-items:center; justify-content:center; font-size:32px; flex-shrink:0; box-shadow:0 4px 12px rgba(0,0,0,0.08); animation:float 2.5s infinite; }
+        .customer-dialog { background:#FFF8F0; border-radius:16px; padding:10px 16px; font-size:15px; font-weight:500; position:relative; flex:1; line-height:1.5; }
+        .customer-dialog::before { content:''; position:absolute; left:-8px; top:50%; transform:translateY(-50%); border:8px solid transparent; border-right-color:#FFF8F0; }
+        .scoop-area { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:600px; }
+        .bowl { width:200px; height:90px; background:linear-gradient(180deg,#F5E6D3,#E8D5C0); border-radius:0 0 100px 100px; position:relative; overflow:hidden; border:3px solid #D4C0A8; box-shadow:inset 0 -10px 30px rgba(0,0,0,0.1),0 4px 12px rgba(0,0,0,0.06); cursor:pointer; transition:var(--transition); }
+        .bowl:hover { transform:scale(1.02); }
+        .bowl-inner { position:absolute; bottom:0; left:0; right:0; height:60px; display:flex; align-items:flex-end; justify-content:center; gap:4px; flex-wrap:wrap; padding:6px 12px; }
+        .bowl-ball { width:14px; height:14px; background:#fff; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.12); animation:sparkle 2s infinite; }
+        .bowl-glitter { width:4px; height:4px; background:var(--gold); border-radius:50%; animation:sparkle 1.5s infinite; }
+        .scoop-result { font-size:18px; font-weight:700; animation:bounceIn 0.5s ease; text-align:center; }
+        .blind-bags { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; width:100%; max-width:600px; margin:8px 0; }
+        .blind-bag { width:64px; height:72px; background:linear-gradient(135deg,#FFE5EC,#FFD1DC); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:32px; cursor:pointer; box-shadow:0 4px 12px rgba(255,182,193,0.3); transition:var(--transition); animation:popIn 0.4s ease; border:2px solid #fff; position:relative; }
+        .blind-bag:hover { transform:translateY(-4px) scale(1.05); }
+        .blind-bag.opened { background:#F5F0EB; cursor:default; }
+        .bag-result { display:flex; flex-direction:column; align-items:center; gap:6px; width:100%; animation:bounceIn 0.4s ease; }
+        .bag-result .emoji-row { display:flex; gap:8px; font-size:28px; }
+        .bracelet-tag { padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+        .bracelet-normal { background:#E8E0D8; color:#8B7B6B; }
+        .bracelet-precious { background:#D4E8FF; color:#4A7BC4; }
+        .bracelet-rare { background:#E8D4FF; color:#8B4AC4; }
+        .bracelet-legendary { background:#FFE8A0; color:#C49A00; }
+        .emoji-legend { width:100%; max-width:600px; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; margin:8px 0; }
+        .legend-toggle { display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:15px; }
+        .legend-content { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:6px; margin-top:10px; max-height:220px; overflow-y:auto; }
+        .legend-item { display:flex; align-items:center; gap:6px; font-size:13px; padding:4px 8px; background:#FFF8F0; border-radius:8px; }
+        .packing-area { display:flex; flex-direction:column; gap:10px; width:100%; max-width:600px; margin:8px 0; }
+        .demand-list { background:#fff; border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+        .demand-list h4 { margin-bottom:8px; font-size:15px; display:flex; align-items:center; gap:6px; }
+        .demand-emojis { display:flex; flex-wrap:wrap; gap:8px; }
+        .demand-item { background:#FFF8F0; border-radius:12px; padding:6px 10px; display:flex; align-items:center; gap:4px; font-size:18px; font-weight:600; }
+        .demand-item .qty { font-size:13px; color:var(--text-light); }
+        .inventory-area { background:#fff; border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); max-height:260px; overflow-y:auto; }
+        .inventory-area h4 { margin-bottom:8px; font-size:15px; }
+        .inventory-grid { display:flex; flex-wrap:wrap; gap:8px; }
+        .inv-item { background:#FFF8F0; border-radius:12px; padding:8px 12px; display:flex; align-items:center; gap:6px; cursor:grab; transition:var(--transition); font-size:14px; border:2px solid transparent; }
+        .inv-item:hover { border-color:var(--pink); box-shadow:0 4px 10px rgba(0,0,0,0.08); }
+        .inv-item .color-dot { width:14px; height:14px; border-radius:50%; border:1px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+        .packing-box { border:2.5px dashed #D4C0A8; border-radius:16px; padding:10px; background:#FFFCF8; display:flex; flex-wrap:wrap; gap:6px; min-height:180px; align-content:flex-start; justify-content:center; transition:var(--transition); }
+        .packing-box.highlight { border-color:var(--mint); background:#F0FFF8; }
+        .packing-slot { width:52px; height:52px; border:1.5px dashed #E8D5C0; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; transition:var(--transition); background:#FFFDFA; position:relative; }
+        .packing-slot.filled { border-style:solid; border-color:var(--mint); background:#F5FFF9; box-shadow:0 2px 8px rgba(181,234,215,0.3); animation:popIn 0.25s ease; }
+        .packing-slot .color-dot { position:absolute; bottom:3px; right:3px; width:10px; height:10px; border-radius:50%; border:1.5px solid #fff; }
+        .success-banner { display:none; background:linear-gradient(135deg,#B5EAD7,#FFE8A0); border-radius:16px; padding:16px 24px; text-align:center; font-size:20px; font-weight:800; color:#4a6b5a; box-shadow:0 6px 24px rgba(181,234,215,0.4); animation:bounceIn 0.5s ease; margin:8px 0; width:100%; }
+        .success-banner.show { display:block; }
+        .modal-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:200; align-items:center; justify-content:center; padding:16px; }
+        .modal-overlay.active { display:flex; }
+        .modal { background:#fff; border-radius:var(--radius); box-shadow:0 8px 40px rgba(0,0,0,0.15); padding:24px; width:100%; max-width:480px; max-height:80vh; overflow-y:auto; animation:bounceIn 0.35s ease; }
+        .modal h3 { font-size:20px; margin-bottom:16px; text-align:center; }
+        .shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .shop-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#FFF8F0; border-radius:12px; font-size:13px; }
+        .shop-item .buy-btn { padding:4px 10px; border-radius:20px; background:var(--mint); border:none; cursor:pointer; font-size:12px; font-weight:600; transition:var(--transition); font-family:inherit; color:#4a6b5a; }
+        .shop-item .buy-btn:hover { background:#9ddbc4; }
+        .shop-item .buy-btn:disabled { opacity:0.4; cursor:not-allowed; }
+        .home-screen-content { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh; gap:16px; text-align:center; }
+        .home-emoji { font-size:72px; animation:float 3s infinite; }
+        .home-features { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:12px 0; }
+        .home-feature { background:#fff; border-radius:16px; padding:10px 16px; font-size:13px; box-shadow:var(--shadow); display:flex; align-items:center; gap:6px; }
+        .game-over-content { text-align:center; padding:20px; }
+        .game-over-content .big-emoji { font-size:64px; }
+        .game-over-content .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+        .game-over-content .stat-card { background:#FFF8F0; border-radius:14px; padding:14px; text-align:center; }
+        .game-over-content .stat-value { font-size:28px; font-weight:800; color:var(--pink); }
+        .drag-ghost { position:fixed; pointer-events:none; z-index:300; font-size:28px; opacity:0.85; transform:translate(-50%,-50%); filter:drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
+        .confetti-piece { position:fixed; width:10px; height:10px; border-radius:2px; pointer-events:none; z-index:400; animation:confetti 1.2s ease-out forwards; }
+        @media (max-width:480px) {
+            .card { padding:14px; margin:6px; border-radius:16px; }
+            .title { font-size:26px; }
+            .packing-box { min-height:140px; }
+            .packing-slot { width:40px; height:40px; font-size:18px; }
+            .blind-bag { width:52px; height:58px; font-size:26px; }
+            .bowl { width:160px; height:70px; }
+            .customer-avatar { width:44px; height:44px; font-size:24px; }
+            .legend-content { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); font-size:11px; }
+            .shop-grid { grid-template-columns:1fr; }
+            .top-bar { padding:8px 12px; font-size:12px; }
+            .btn { padding:10px 18px; font-size:14px; }
+            .inventory-grid { gap:4px; }
+            .inv-item { font-size:12px; padding:6px 8px; }
+            .demand-item { font-size:15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 首页 -->
+    <div class="screen active" id="homeScreen">
+        <div class="home-screen-content">
+            <div class="home-emoji">🥄✨</div>
+            <div class="title">盲勺打包小游戏</div>
+            <div class="subtitle">舀一勺惊喜，拆出幸运手链！<br>根据Emoji清单，挑选对应颜色的商品打包吧～</div>
+            <div class="home-features">
+                <div class="home-feature">🎁 拆盲袋</div>
+                <div class="home-feature">📦 打包商品</div>
+                <div class="home-feature">👧 服务顾客</div>
+                <div class="home-feature">💰 赚金币</div>
+            </div>
+            <button class="btn btn-pink" style="font-size:20px;padding:16px 40px;" onclick="startGame()">🚀 开始游戏</button>
+            <div style="font-size:12px;color:var(--text-light);margin-top:12px;">完成10位顾客订单即可通关</div>
+        </div>
+    </div>
+
+    <!-- 游戏主界面 -->
+    <div class="screen" id="gameScreen">
+        <div class="top-bar">
+            <div class="stat-chip">💰 <span id="goldDisplay">100</span></div>
+            <div class="stat-chip">⭐ 口碑 <span id="reputationDisplay">0</span></div>
+            <div class="stat-chip">👥 <span id="customerCountDisplay">0</span>/10</div>
+            <button class="btn btn-mint btn-sm" onclick="openShop()">🛒 商城</button>
+        </div>
+
+        <div id="customerArea" style="display:none;width:100%;max-width:600px;">
+            <div class="customer-box">
+                <div class="customer-avatar" id="customerAvatar">🧑</div>
+                <div class="customer-dialog" id="customerDialog">欢迎光临！<div class="customer-hint" id="customerHint"></div></div>
+            </div>
+        </div>
+
+        <div class="scoop-area" id="scoopArea">
+            <div class="bowl" id="bowl">
+                <div class="bowl-inner" id="bowlInner"></div>
+            </div>
+            <button class="btn btn-pink" id="scoopBtn" onclick="scoopBalls()">🥄 舀一勺</button>
+            <div id="scoopResult" class="scoop-result" style="display:none;"></div>
+        </div>
+
+        <div class="blind-bags" id="blindBagsArea"></div>
+        <div id="bagOpenResult" style="display:none;width:100%;max-width:600px;"></div>
+
+        <!-- 打包区域（新） -->
+        <div id="packingArea" style="display:none;width:100%;max-width:600px;">
+            <div class="demand-list">
+                <h4>📋 需求清单（拆出的Emoji）</h4>
+                <div class="demand-emojis" id="demandEmojis"></div>
+            </div>
+            <div class="inventory-area">
+                <h4>📦 商品库存（拖动到右侧打包盒）</h4>
+                <div class="inventory-grid" id="inventoryGrid"></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+                <div class="packing-box" id="packingBox"></div>
+            </div>
+            <div class="success-banner" id="successBanner"></div>
+        </div>
+
+        <div class="emoji-legend" id="emojiLegend">
+            <div class="legend-toggle" onclick="toggleLegend()"><span>📖 Emoji对照表</span><span id="legendArrow">▼</span></div>
+            <div class="legend-content" id="legendContent"></div>
+        </div>
+    </div>
+
+    <!-- 商城弹窗 -->
+    <div class="modal-overlay" id="shopModal">
+        <div class="modal">
+            <h3>🛒 商品采购商城</h3>
+            <div style="text-align:center;margin-bottom:12px;font-size:14px;">💰 当前金币：<strong id="shopGold">100</strong> ｜ 每个商品 <strong>5金币</strong></div>
+            <div class="shop-grid" id="shopGrid"></div>
+            <div style="text-align:center;margin-top:16px;"><button class="btn btn-outline" onclick="closeShop()">关闭</button></div>
+        </div>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div class="modal-overlay" id="gameOverModal">
+        <div class="modal game-over-content">
+            <div class="big-emoji">🎉</div>
+            <h3 style="font-size:24px;">游戏通关！</h3>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="finalGold">0</div><div style="font-size:13px;color:var(--text-light);">总金币</div></div>
+                <div class="stat-card"><div class="stat-value" id="finalReputation">0</div><div style="font-size:13px;color:var(--text-light);">口碑值</div></div>
+                <div class="stat-card"><div class="stat-value">10</div><div style="font-size:13px;color:var(--text-light);">服务顾客</div></div>
+                <div class="stat-card"><div class="stat-value" id="finalEarned">0</div><div style="font-size:13px;color:var(--text-light);">累计收益</div></div>
+            </div>
+            <button class="btn btn-pink" onclick="restartGame()">🔄 再来一次</button>
+        </div>
+    </div>
+
+    <div class="drag-ghost" id="dragGhost" style="display:none;"></div>
+
+    <script>
+        const EMOJI_MAP = [
+            { emoji: '🍦', item: '水杯' }, { emoji: '🦄', item: '笔袋' }, { emoji: '🐱', item: '眼罩' },
+            { emoji: '🐼', item: '毛绒玩具' }, { emoji: '🌸', item: '便利贴' }, { emoji: '📓', item: '笔记本' },
+            { emoji: '✏️', item: '可爱的笔' }, { emoji: '🧸', item: '捏捏乐玩具' }, { emoji: '☕', item: '马克杯' },
+            { emoji: '💎', item: '钻石画' }, { emoji: '🧱', item: '小型乐高玩具' }, { emoji: '🎀', item: '发圈' },
+            { emoji: '🖱️', item: '鼠标垫' }, { emoji: '🦋', item: '抓夹' }, { emoji: '💇', item: '发卡' },
+            { emoji: '🔑', item: '钥匙扣' }
+        ];
+        const COLORS = [
+            { name: '红色', hex: '#FF6B6B' }, { name: '蓝色', hex: '#4ECDC4' }, { name: '粉色', hex: '#FFB6C1' },
+            { name: '紫色', hex: '#C9B1FF' }, { name: '绿色', hex: '#B5EAD7' }, { name: '黄色', hex: '#FFE66D' }
+        ];
+        const BRACELET_TIERS = [
+            { name: '普通', weight: 8500, class: 'bracelet-normal', bonus: 0 },
+            { name: '珍贵', weight: 1400, class: 'bracelet-precious', bonus: 1 },
+            { name: '稀有', weight: 100, class: 'bracelet-rare', bonus: 3 },
+            { name: '极品', weight: 1, class: 'bracelet-legendary', bonus: 10 }
+        ];
+        const CUSTOMER_AVATARS = ['🧑','👩','👨','👧','👦','👵','👴','🧒','👩‍🦰','👨‍🦱'];
+        const TOTAL_CUSTOMERS = 10;
+        const INITIAL_STOCK = 10;
+        const INITIAL_GOLD = 100;
+        const PURCHASE_PRICE = 5;
+        const BASE_COIN_PER_ITEM = 5;
+        const COLOR_LIMIT_CHANCE = 0.3;
+        const COLOR_LIMIT_MULTIPLIER = 2;
+
+        let gameState = {};
+
+        function initStock() {
+            gameState.stock = {};
+            EMOJI_MAP.forEach(e => {
+                gameState.stock[e.item] = {};
+                let remaining = INITIAL_STOCK;
+                for (let i = 0; i < remaining; i++) {
+                    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                    gameState.stock[e.item][color.name] = (gameState.stock[e.item][color.name] || 0) + 1;
+                }
+            });
+        }
+
+        function startGame() {
+            gameState = {
+                gold: INITIAL_GOLD, reputation: 0, customersServed: 0, totalEarned: 0,
+                stock: {}, currentCustomer: null, ballsScooped: 0, blindBags: [], openedBags: [],
+                selectedItems: [], packingItems: [], hiddenEmoji: null, phase: 'home',
+                currentEmojis: [], currentBracelets: [], colorRestricted: false, requiredColor: null,
+                extraBagAwarded: false, demandMap: new Map(), packedEmojis: []
+            };
+            initStock();
+            gameState.hiddenEmoji = EMOJI_MAP[Math.floor(Math.random() * EMOJI_MAP.length)].emoji;
+            showScreen('gameScreen');
+            updateUI();
+            renderLegend();
+            spawnCustomer();
+            initBowl();
+        }
+
+        function restartGame() { document.getElementById('gameOverModal').classList.remove('active'); startGame(); }
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+        function updateUI() {
+            document.getElementById('goldDisplay').textContent = gameState.gold;
+            document.getElementById('reputationDisplay').textContent = gameState.reputation;
+            document.getElementById('customerCountDisplay').textContent = gameState.customersServed;
+        }
+        function initBowl() {
+            const bowlInner = document.getElementById('bowlInner');
+            bowlInner.innerHTML = '';
+            for (let i = 0; i < 12; i++) { const b = document.createElement('div'); b.className='bowl-ball'; b.style.animationDelay=(i*0.15)+'s'; bowlInner.appendChild(b); }
+            for (let i = 0; i < 8; i++) { const g = document.createElement('div'); g.className='bowl-glitter'; g.style.animationDelay=(i*0.2+0.1)+'s'; g.style.marginBottom=(Math.random()*10)+'px'; bowlInner.appendChild(g); }
+        }
+        function spawnCustomer() {
+            if (gameState.customersServed >= TOTAL_CUSTOMERS) { endGame(); return; }
+            gameState.phase = 'customer';
+            gameState.ballsScooped = 0; gameState.blindBags = []; gameState.openedBags = [];
+            gameState.currentEmojis = []; gameState.currentBracelets = []; gameState.extraBagAwarded = false;
+            gameState.demandMap = new Map(); gameState.packedEmojis = [];
+            gameState.colorRestricted = Math.random() < COLOR_LIMIT_CHANCE;
+            gameState.requiredColor = gameState.colorRestricted ? COLORS[Math.floor(Math.random()*COLORS.length)] : null;
+            const avatar = CUSTOMER_AVATARS[Math.floor(Math.random()*CUSTOMER_AVATARS.length)];
+            document.getElementById('customerAvatar').textContent = avatar;
+            let dialogText, hintText;
+            if (gameState.colorRestricted) { dialogText = `我只要${gameState.requiredColor.name}的商品哦～`; hintText = '🌟 限制颜色顾客，奖励双倍金币！'; }
+            else { dialogText = '我什么颜色都喜欢～'; hintText = '🎨 任意颜色都可以，自由发挥吧！'; }
+            document.getElementById('customerDialog').innerHTML = dialogText + `<div class="customer-hint">${hintText}</div>`;
+            document.getElementById('customerArea').style.display = 'block';
+            document.getElementById('scoopArea').style.display = 'flex';
+            document.getElementById('blindBagsArea').innerHTML = '';
+            document.getElementById('bagOpenResult').style.display = 'none';
+            document.getElementById('packingArea').style.display = 'none';
+            document.getElementById('scoopBtn').style.display = 'inline-flex';
+            document.getElementById('scoopResult').style.display = 'none';
+            document.getElementById('scoopBtn').disabled = false;
+            updateUI();
+        }
+        function scoopBalls() {
+            if (gameState.phase !== 'customer') return;
+            gameState.phase = 'scooping';
+            document.getElementById('scoopBtn').disabled = true;
+            const count = Math.floor(Math.random()*6)+3;
+            gameState.ballsScooped = count;
+            const bowl = document.getElementById('bowl');
+            bowl.style.transform = 'scale(0.92)'; setTimeout(()=>{bowl.style.transform='scale(1)';},300);
+            const resultEl = document.getElementById('scoopResult');
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = `🥄 舀到了 <span style="font-size:28px;color:var(--pink)">${count}</span> 个小球！`;
+            resultEl.style.animation='none'; void resultEl.offsetWidth; resultEl.style.animation='bounceIn 0.5s ease';
+            gameState.blindBags = [];
+            for (let i=0;i<count;i++) gameState.blindBags.push({opened:false,emojis:[],bracelet:null,isExtra:false});
+            renderBlindBags();
+            document.getElementById('scoopBtn').style.display = 'none';
+        }
+        function renderBlindBags() {
+            const area = document.getElementById('blindBagsArea'); area.innerHTML='';
+            gameState.blindBags.forEach((bag,index)=>{
+                if(bag.opened){ const div=document.createElement('div'); div.className='blind-bag opened'; div.innerHTML='📭'; if(bag.isExtra){const b=document.createElement('span'); b.className='bag-badge'; b.textContent='🎁'; b.style.background='#FFD700'; div.appendChild(b);} area.appendChild(div); }
+                else { const div=document.createElement('div'); div.className='blind-bag'; div.innerHTML='🎁'; if(bag.isExtra){const b=document.createElement('span'); b.className='bag-badge'; b.textContent='🎁'; b.style.background='#FFD700'; div.appendChild(b);} div.onclick=()=>openBlindBag(index); area.appendChild(div); }
+            });
+        }
+        function openBlindBag(index) {
+            if(gameState.blindBags[index].opened) return;
+            if(gameState.phase !== 'scooping' && gameState.phase !== 'opening') return;
+            gameState.phase='opening';
+            const bag=gameState.blindBags[index]; bag.opened=true;
+            const bracelet=rollBracelet(); bag.bracelet=bracelet; gameState.currentBracelets.push(bracelet);
+            const emojiCount=Math.floor(Math.random()*3)+1;
+            const bagEmojis=[];
+            for(let i=0;i<emojiCount;i++){ const entry=EMOJI_MAP[Math.floor(Math.random()*EMOJI_MAP.length)]; bagEmojis.push(entry); gameState.currentEmojis.push(entry);
+                if(entry.emoji===gameState.hiddenEmoji && !gameState.extraBagAwarded){ gameState.extraBagAwarded=true; gameState.blindBags.push({opened:false,emojis:[],bracelet:null,isExtra:true}); }
+            }
+            bag.emojis=bagEmojis;
+            renderBlindBags();
+            showBagResult(bag,index);
+            updateUI();
+            const allOpened = gameState.blindBags.every(b=>b.opened);
+            if(allOpened){ startPacking(); }
+        }
+        function rollBracelet() {
+            const totalWeight = BRACELET_TIERS.reduce((s,t)=>s+t.weight,0);
+            let roll = Math.random()*totalWeight;
+            for(const tier of BRACELET_TIERS){ roll-=tier.weight; if(roll<=0) return tier; }
+            return BRACELET_TIERS[0];
+        }
+        function showBagResult(bag,index) {
+            const resultArea=document.getElementById('bagOpenResult'); resultArea.style.display='block';
+            resultArea.style.animation='none'; void resultArea.offsetWidth; resultArea.style.animation='bounceIn 0.4s ease';
+            let html=`<div class="bag-result" style="padding:12px;background:#fff;border-radius:16px;box-shadow:var(--shadow);">`;
+            html+=`<div style="font-size:14px;font-weight:600;">盲袋 #${index+1}${bag.isExtra?' 🎁(额外)':''}</div>`;
+            html+=`<div class="bracelet-tag ${bag.bracelet.class}">💎 ${bag.bracelet.name}手链</div>`;
+            html+=`<div class="emoji-row">`; bag.emojis.forEach(e=>{html+=`<span style="font-size:28px;">${e.emoji}</span>`;}); html+=`</div>`;
+            if(bag.emojis.some(e=>e.emoji===gameState.hiddenEmoji)) html+=`<div><span class="hidden-badge">🎉 隐藏Emoji！额外盲袋+1</span></div>`;
+            html+=`</div>`; resultArea.innerHTML=html;
+        }
+        function startPacking() {
+            gameState.phase='packing';
+            document.getElementById('bagOpenResult').style.display='none';
+            document.getElementById('scoopArea').style.display='none';
+            document.getElementById('blindBagsArea').style.display='none';
+            document.getElementById('packingArea').style.display='block';
+            document.getElementById('successBanner').classList.remove('show');
+            gameState.demandMap = new Map();
+            gameState.currentEmojis.forEach(entry=>{ const item=entry.item; gameState.demandMap.set(item,(gameState.demandMap.get(item)||0)+1); });
+            gameState.packedEmojis = [];
+            renderDemandList();
+            renderInventory();
+            renderPackingBox();
+        }
+        function renderDemandList() {
+            const container=document.getElementById('demandEmojis'); container.innerHTML='';
+            for(let [item,count] of gameState.demandMap){
+                const entry=EMOJI_MAP.find(e=>e.item===item);
+                if(!entry) continue;
+                const div=document.createElement('div'); div.className='demand-item';
+                div.innerHTML=`${entry.emoji} <span style="font-size:14px;">${item}</span> <span class="qty">x${count}</span>`;
+                container.appendChild(div);
+            }
+        }
+        function renderInventory() {
+            const grid=document.getElementById('inventoryGrid'); grid.innerHTML='';
+            for(let [item,colorMap] of Object.entries(gameState.stock)){
+                for(let [colorName,qty] of Object.entries(colorMap)){
+                    if(qty>0){
+                        const entry=EMOJI_MAP.find(e=>e.item===item);
+                        const colorObj=COLORS.find(c=>c.name===colorName);
+                        for(let i=0;i<qty;i++){
+                            const div=document.createElement('div'); div.className='inv-item';
+                            div.innerHTML=`<span style="font-size:18px;">${entry.emoji}</span><span>${item}</span><span class="color-dot" style="background:${colorObj.hex};"></span>`;
+                            div.dataset.item=item; div.dataset.color=colorName;
+                            div.addEventListener('mousedown',(e)=>startDrag(e,div));
+                            div.addEventListener('touchstart',(e)=>startDrag(e,div),{passive:false});
+                            grid.appendChild(div);
+                        }
+                    }
+                }
+            }
+            if(grid.children.length===0) grid.innerHTML='<div style="font-size:13px;color:var(--text-light);">库存空了，请去商城采购～</div>';
+        }
+        function renderPackingBox() {
+            const box=document.getElementById('packingBox'); box.innerHTML='';
+            const totalDemand = Array.from(gameState.demandMap.values()).reduce((a,b)=>a+b,0);
+            const cols = totalDemand<=8?4:5;
+            box.style.display='grid'; box.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+            for(let i=0;i<totalDemand;i++){
+                const slot=document.createElement('div'); slot.className='packing-slot'; slot.dataset.slotIndex=i;
+                slot.innerHTML='·';
+                const placed=gameState.packedEmojis[i];
+                if(placed){
+                    slot.classList.add('filled'); slot.innerHTML=placed.emoji;
+                    const dot=document.createElement('span'); dot.className='color-dot'; dot.style.background=placed.colorHex; slot.appendChild(dot);
+                    slot.onclick=()=>removeFromSlot(i);
+                }
+                box.appendChild(slot);
+            }
+        }
+        function removeFromSlot(slotIndex) {
+            if(gameState.packedEmojis[slotIndex]){
+                const removed=gameState.packedEmojis[slotIndex];
+                gameState.packedEmojis[slotIndex]=null;
+                gameState.demandMap.set(removed.item,(gameState.demandMap.get(removed.item)||0)+1);
+                gameState.stock[removed.item][removed.color] = (gameState.stock[removed.item][removed.color]||0)+1;
+                renderDemandList(); renderInventory(); renderPackingBox(); checkPackSuccess();
+            }
+        }
+        function checkPackSuccess() {
+            const demandRemaining = Array.from(gameState.demandMap.values()).reduce((a,b)=>a+b,0);
+            if(demandRemaining===0 && gameState.packedEmojis.every(e=>e!==null && e!==undefined)){
+                const banner=document.getElementById('successBanner'); banner.classList.add('show');
+                banner.style.animation='none'; void banner.offsetWidth; banner.style.animation='bounceIn 0.5s ease';
+                banner.innerHTML='📦 打包成功！🎉';
+                calculateRewards(); showConfetti();
+            }
+        }
+        function calculateRewards() {
+            let totalCoins=0; let correctColors=0; let allCorrect=true;
+            gameState.packedEmojis.forEach(item=>{
+                const isColorCorrect = gameState.colorRestricted ? item.color===gameState.requiredColor.name : true;
+                if(isColorCorrect) correctColors++; else allCorrect=false;
+                let itemCoins = BASE_COIN_PER_ITEM + (isColorCorrect?gameState.reputation:0);
+                if(!isColorCorrect) itemCoins -= 2;
+                if(itemCoins<0) itemCoins=0;
+                totalCoins += itemCoins;
+            });
+            gameState.currentBracelets.forEach(b=>{ totalCoins += b.bonus; });
+            if(gameState.colorRestricted) totalCoins *= COLOR_LIMIT_MULTIPLIER;
+            totalCoins = Math.round(totalCoins);
+            gameState.gold += totalCoins; gameState.totalEarned += totalCoins;
+            if(allCorrect) gameState.reputation++;
+            gameState.customersServed++;
+            updateUI();
+            banner.innerHTML = `📦 打包成功！🎉 获得 <strong>${totalCoins}金币</strong>` + (allCorrect?' ｜ ⭐口碑+1':' ｜ 有颜色不匹配');
+            setTimeout(()=>{
+                if(gameState.customersServed>=TOTAL_CUSTOMERS) endGame();
+                else spawnCustomer();
+                document.getElementById('packingArea').style.display='none';
+            },1800);
+        }
+        function showConfetti() {
+            const colors=['#FFB6C1','#B5EAD7','#C9B1FF','#FFE66D','#FF6B6B','#4ECDC4'];
+            for(let i=0;i<30;i++){ const p=document.createElement('div'); p.className='confetti-piece'; p.style.left=(Math.random()*100)+'vw'; p.style.top=(Math.random()*60+20)+'vh'; p.style.background=colors[Math.floor(Math.random()*colors.length)]; p.style.width=(Math.random()*8+4)+'px'; p.style.height=(Math.random()*8+4)+'px'; p.style.animationDuration=(Math.random()*1+0.8)+'s'; p.style.animationDelay=(Math.random()*0.5)+'s'; document.body.appendChild(p); setTimeout(()=>p.remove(),2000); }
+        }
+        let dragData={active:false,element:null,item:null,color:null,ghost:null};
+        function startDrag(e,element) {
+            e.preventDefault();
+            const item=element.dataset.item; const color=element.dataset.color;
+            if(!gameState.stock[item] || (gameState.stock[item][color]||0)<=0) return;
+            dragData.active=true; dragData.element=element; dragData.item=item; dragData.color=color;
+            const ghost=document.getElementById('dragGhost'); ghost.style.display='block';
+            const entry=EMOJI_MAP.find(e=>e.item===item); ghost.textContent=entry.emoji;
+            const pos=getEventPos(e); ghost.style.left=pos.x+'px'; ghost.style.top=pos.y+'px'; dragData.ghost=ghost;
+            document.addEventListener('mousemove',onDragMove); document.addEventListener('mouseup',onDragEnd);
+            document.addEventListener('touchmove',onDragMove,{passive:false}); document.addEventListener('touchend',onDragEnd);
+        }
+        function getEventPos(e){ if(e.touches&&e.touches.length>0) return {x:e.touches[0].clientX,y:e.touches[0].clientY}; if(e.changedTouches&&e.changedTouches.length>0) return {x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY}; return {x:e.clientX,y:e.clientY}; }
+        function onDragMove(e){ if(!dragData.active) return; e.preventDefault(); const pos=getEventPos(e); if(dragData.ghost){dragData.ghost.style.left=pos.x+'px'; dragData.ghost.style.top=pos.y+'px';} document.querySelectorAll('.packing-slot').forEach(s=>{s.style.borderColor='#E8D5C0';s.style.background='#FFFDFA';}); }
+        function onDragEnd(e){
+            if(!dragData.active) return; dragData.active=false; if(dragData.ghost) dragData.ghost.style.display='none';
+            const pos=getEventPos(e); const slots=document.querySelectorAll('.packing-slot'); let targetSlot=null; let targetIndex=-1;
+            slots.forEach(s=>{ const rect=s.getBoundingClientRect(); if(pos.x>=rect.left&&pos.x<=rect.right&&pos.y>=rect.top&&pos.y<=rect.bottom){ targetSlot=s; targetIndex=parseInt(s.dataset.slotIndex); } });
+            if(targetSlot && targetIndex>=0){
+                const itemName=dragData.item; const colorName=dragData.color;
+                if((gameState.stock[itemName]||{})[colorName]>0){
+                    const demandCount=gameState.demandMap.get(itemName)||0;
+                    if(demandCount>0){
+                        const colorOk = gameState.colorRestricted ? colorName===gameState.requiredColor.name : true;
+                        if(!colorOk){ shakeElement(targetSlot); }
+                        else {
+                            if(!gameState.packedEmojis[targetIndex]){
+                                gameState.stock[itemName][colorName]--;
+                                gameState.demandMap.set(itemName,demandCount-1);
+                                const colorObj=COLORS.find(c=>c.name===colorName);
+                                gameState.packedEmojis[targetIndex]={item:itemName,color:colorName,emoji:EMOJI_MAP.find(e=>e.item===itemName).emoji,colorHex:colorObj.hex};
+                                renderDemandList(); renderInventory(); renderPackingBox(); checkPackSuccess();
+                            } else shakeElement(targetSlot);
+                        }
+                    } else shakeElement(targetSlot);
+                } else shakeElement(targetSlot);
+            }
+            document.removeEventListener('mousemove',onDragMove); document.removeEventListener('mouseup',onDragEnd);
+            document.removeEventListener('touchmove',onDragMove); document.removeEventListener('touchend',onDragEnd);
+            dragData={active:false,element:null,item:null,color:null,ghost:null};
+        }
+        function shakeElement(el){ el.style.animation='shake 0.4s ease'; setTimeout(()=>{el.style.animation='';},400); }
+        function openShop(){ document.getElementById('shopModal').classList.add('active'); renderShop(); }
+        function closeShop(){ document.getElementById('shopModal').classList.remove('active'); }
+        function renderShop(){
+            document.getElementById('shopGold').textContent=gameState.gold;
+            const grid=document.getElementById('shopGrid'); grid.innerHTML='';
+            EMOJI_MAP.forEach(e=>{
+                const stockCount=Object.values(gameState.stock[e.item]||{}).reduce((a,b)=>a+b,0);
+                const div=document.createElement('div'); div.className='shop-item';
+                div.innerHTML=`<div class="info"><span style="font-size:20px;">${e.emoji}</span><span>${e.item}</span></div>
+                    <div style="display:flex;align-items:center;gap:6px;"><span class="stock">${stockCount}</span>
+                    <button class="buy-btn" onclick="buyItem('${e.item}')" ${gameState.gold<PURCHASE_PRICE?'disabled':''}>+5💰</button></div>`;
+                grid.appendChild(div);
+            });
+        }
+        function buyItem(itemName){
+            if(gameState.gold<PURCHASE_PRICE) return;
+            gameState.gold-=PURCHASE_PRICE;
+            const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+            gameState.stock[itemName][color.name]=(gameState.stock[itemName][color.name]||0)+1;
+            updateUI(); renderShop(); if(gameState.phase==='packing') renderInventory();
+        }
+        function renderLegend(){
+            const content=document.getElementById('legendContent'); content.innerHTML='';
+            EMOJI_MAP.forEach(e=>{ const div=document.createElement('div'); div.className='legend-item'; div.innerHTML=`<span class="emoji">${e.emoji}</span><span>${e.item}</span>`; content.appendChild(div); });
+        }
+        function toggleLegend(){ const legend=document.getElementById('emojiLegend'); const arrow=document.getElementById('legendArrow'); legend.classList.toggle('collapsed'); arrow.textContent=legend.classList.contains('collapsed')?'▶':'▼'; }
+        function endGame(){
+            gameState.phase='gameover';
+            document.getElementById('finalGold').textContent=gameState.gold;
+            document.getElementById('finalReputation').textContent=gameState.reputation;
+            document.getElementById('finalEarned').textContent=gameState.totalEarned;
+            document.getElementById('gameOverModal').classList.add('active');
+        }
+        document.addEventListener('DOMContentLoaded',()=>{ initStock(); renderLegend(); initBowl(); updateUI(); });
+        document.getElementById('shopModal').addEventListener('click',function(e){ if(e.target===this) closeShop(); });
+    </script>
+</body>
+</html>
